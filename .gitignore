@@ -4,4 +4,3 @@ __pycache__/
 *.pkl
 users.json
 history.json
-*.png

@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import pickle
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.cluster import KMeans
@@ -133,5 +135,6 @@ for i, v in enumerate(results_df["RMSE"]):
 fig.suptitle(f"Best Model: {best_row} (highlighted in orange)", fontsize=13)
 plt.tight_layout()
 plt.savefig("static/model_comparison.png")
-plt.show()
+plt.savefig("static/model_comparison.png")
+plt.close()
 print("Comparison chart saved to static/model_comparison.png")
