@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}History – AutoPrice AI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>📋 Prediction History</h2>
+  <p>All your past vehicle price predictions</p>
+</div>
+
+{% if history %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Date</th><th>Make</th><th>Model</th><th>Year</th><th>Mileage</th><th>Fuel</th><th>Transmission</th><th>Price</th></tr>
+    </thead>
+    <tbody>
+      {% for h in history %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ h.date }}</td>
+        <td>{{ h.make }}</td>
+        <td>{{ h.model }}</td>
+        <td>{{ h.year }}</td>
+        <td>{{ h.mileage }} km</td>
+        <td>{{ h.fuel_type }}</td>
+        <td>{{ h.transmission }}</td>
+        <td class="price-cell">₹{{ "{:,.0f}".format(h.price) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">No predictions yet. <a href="/predict">Make your first prediction →</a></div>
+{% endif %}
+{% endblock %}

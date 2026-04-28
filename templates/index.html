@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AutoPrice AI</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🚗 AutoPrice AI</h1>
+    <p class="subtitle">Vehicle Price Prediction using Multi-Model Learning</p>
+
+    <form id="predict-form">
+      <div class="grid">
+        <div class="field">
+          <label>Year</label>
+          <input type="number" id="year" placeholder="e.g. 2019" min="1990" max="2025" required />
+        </div>
+        <div class="field">
+          <label>Make</label>
+          <select id="make" required>
+            <option value="">Select Make</option>
+            <option>Toyota</option><option>Honda</option><option>Ford</option>
+            <option>BMW</option><option>Mercedes</option><option>Audi</option>
+            <option>Chevrolet</option><option>Hyundai</option><option>Nissan</option>
+            <option>Kia</option><option>Mazda</option><option>Volkswagen</option>
+            <option>Subaru</option><option>Tesla</option>
+            <option>Tata</option><option>Renault</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Model</label>
+          <select id="model" required>
+            <option value="">Select Model</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Engine Size (L)</label>
+          <input type="number" id="engine_size" placeholder="e.g. 2.5" step="0.1" min="0" required />
+        </div>
+        <div class="field">
+          <label>Mileage (km)</label>
+          <input type="number" id="mileage" placeholder="e.g. 45000" min="0" required />
+        </div>
+        <div class="field">
+          <label>Transmission</label>
+          <select id="transmission" required>
+            <option value="">Select</option>
+            <option>Automatic</option>
+            <option>Manual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fuel Type</label>
+          <select id="fuel_type" required>
+            <option value="">Select</option>
+            <option>Petrol</option>
+            <option>Diesel</option>
+            <option>Electric</option>
+            <option>Hybrid</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Owner Type</label>
+          <select id="owner_type" required>
+            <option value="">Select</option>
+            <option>First</option>
+            <option>Second</option>
+            <option>Third</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit">🔍 Predict Price</button>
+    </form>
+
+    <div id="result" class="result hidden">
+      <div class="price-box">
+        <span class="label">Estimated Price</span>
+        <span class="price" id="price-value"></span>
+        <span class="model-tag" id="model-tag"></span>
+      </div>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+  </div>
+
+  <script>
+    const carModels = {
+      "Toyota":     ["Camry","Corolla","RAV4","Highlander","Prius","Sienna","4Runner","Tacoma","Sequoia","Venza","Land Cruiser"],
+      "Honda":      ["Civic","Accord","CR-V","Pilot","Odyssey","Passport","HR-V","Ridgeline"],
+      "Ford":       ["Mustang","Focus","F-150","Explorer","Bronco","Expedition","Edge","Fusion","Escape"],
+      "BMW":        ["3 Series","5 Series","X5","X3","X1","7 Series","i4","X7"],
+      "Mercedes":   ["C-Class","E-Class","ML-Class","GLC","GLE","S-Class"],
+      "Audi":       ["A4","A6","Q5","Q3","A3","A5","e-tron"],
+      "Chevrolet":  ["Malibu","Cruze","Equinox","Tahoe","Traverse","Impala","Blazer","Silverado"],
+      "Hyundai":    ["Elantra","Sonata","Tucson","Santa Fe","Ioniq 5","Palisade"],
+      "Nissan":     ["Altima","Sentra","Rogue","Pathfinder","Murano","Maxima","Frontier"],
+      "Kia":        ["Optima","Sorento","Sportage","Telluride","EV6","Stinger"],
+      "Mazda":      ["Mazda6","CX-5","CX-9","Mazda3","MX-5","CX-3"],
+      "Volkswagen": ["Passat","Tiguan","Atlas","Jetta","Golf"],
+      "Subaru":     ["Outback","Forester","Ascent","Impreza","Legacy"],
+      "Tesla":      ["Model 3","Model Y"],
+      "Tata":       ["Nexon","Harrier","Safari","Tiago","Altroz","Punch","Tigor","Curvv"],
+      "Renault":    ["Kwid","Duster","Triber","Kiger","Lodgy","Captur"],
+    };
+
+    document.getElementById("make").addEventListener("change", function() {
+      const modelSel = document.getElementById("model");
+      modelSel.innerHTML = "<option value=''>Select Model</option>";
+      (carModels[this.value] || []).forEach(m => {
+        modelSel.innerHTML += `<option>${m}</option>`;
+      });
+    });
+
+    document.getElementById("predict-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const result = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
+      result.classList.add("hidden");
+      errorDiv.classList.add("hidden");
+
+      const payload = {
+        year:        document.getElementById("year").value,
+        make:        document.getElementById("make").value,
+        model:       document.getElementById("model").value,
+        engine_size: document.getElementById("engine_size").value,
+        mileage:     document.getElementById("mileage").value,
+        transmission:document.getElementById("transmission").value,
+        fuel_type:   document.getElementById("fuel_type").value,
+        owner_type:  document.getElementById("owner_type").value,
+      };
+
+      try {
+        const res  = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.error) {
+          errorDiv.textContent = "⚠️ " + data.error;
+          errorDiv.classList.remove("hidden");
+        } else {
+          const inr = (data.price * 83.5).toLocaleString("en-IN", {maximumFractionDigits: 0});
+          document.getElementById("price-value").textContent = "₹" + inr;
+          document.getElementById("model-tag").textContent =
+            "Predicted by: " + data.model;
+          result.classList.remove("hidden");
+        }
+      } catch {
+        errorDiv.textContent = "⚠️ Server error. Please try again.";
+        errorDiv.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

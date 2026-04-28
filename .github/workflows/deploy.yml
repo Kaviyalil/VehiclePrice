@@ -1,0 +1,105 @@
+name: AutoPrice AI - CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Job 1: Test ──────────────────────────────────────────────────────────────
+  test:
+    name: ✅ Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate dataset
+        run: python generate_data.py
+
+      - name: Train model
+        run: python model_training.py
+
+      - name: Test Flask app starts correctly
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          FLASK_SECRET: ${{ secrets.FLASK_SECRET }}
+        run: |
+          python -c "
+          from app import app
+          client = app.test_client()
+          r = client.get('/login')
+          assert r.status_code == 200, f'Login page failed: {r.status_code}'
+          print('✅ All tests passed')
+          "
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: model-pkl
+          path: model.pkl
+
+  # ── Job 2: Build ─────────────────────────────────────────────────────────────
+  build:
+    name: 🔨 Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download model artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: model-pkl
+
+      - name: Verify build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          FLASK_SECRET: ${{ secrets.FLASK_SECRET }}
+        run: |
+          python -c "
+          import pickle
+          obj = pickle.load(open('model.pkl','rb'))
+          print('✅ Model loaded:', obj['model_name'])
+          print('✅ Makes:', list(obj['encoders']['Make'].classes_))
+          "
+
+  # ── Job 3: Deploy ─────────────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy to Render
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}" \
+            -H "Content-Type: application/json"
+          echo "✅ Deployment triggered on Render"

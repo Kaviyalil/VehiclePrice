@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}AutoPrice AI{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body class="app-page">
+  <nav class="navbar">
+    <div class="nav-brand">🚗 AutoPrice AI</div>
+    <div class="nav-links">
+      <a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="/predict"   class="{% if request.path == '/predict' %}active{% endif %}">Predict</a>
+      <a href="/history"   class="{% if request.path == '/history' %}active{% endif %}">History</a>
+      <a href="/profile"   class="{% if request.path == '/profile' %}active{% endif %}">Profile</a>
+      <a href="/about"     class="{% if request.path == '/about' %}active{% endif %}">About</a>
+    </div>
+    <div class="nav-user">
+      <span>👤 {{ current_user.name }}</span>
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </nav>
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

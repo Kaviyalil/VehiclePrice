@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}Profile – AutoPrice AI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>👤 User Profile</h2>
+  <p>Manage your profile information and photo</p>
+</div>
+
+<div class="profile-container">
+  <div class="profile-card">
+    <div class="profile-photo-section">
+      <div class="photo-preview" id="photo-preview">
+        {% if profile_photo %}
+          <img src="{{ url_for('static', filename=profile_photo) }}" alt="Profile Photo" id="current-photo">
+        {% else %}
+          <div class="photo-placeholder">
+            <span>📷</span>
+            <p>No photo uploaded</p>
+          </div>
+        {% endif %}
+      </div>
+      <div class="photo-upload-area">
+        <form id="photo-upload-form" enctype="multipart/form-data">
+          <input type="file" id="photo-input" name="photo" accept="image/*" hidden>
+          <button type="button" class="btn-secondary" onclick="document.getElementById('photo-input').click()">
+            📁 Choose Photo
+          </button>
+          <button type="submit" class="btn-primary" id="upload-btn" disabled>
+            ⬆️ Upload Photo
+          </button>
+        </form>
+        <p class="upload-hint">Supported: JPG, PNG, GIF, WebP (Max 16MB)</p>
+      </div>
+      <div id="photo-message" class="message hidden"></div>
+    </div>
+
+    <div class="profile-info-section">
+      <div class="info-group">
+        <label>Name</label>
+        <div class="info-value">{{ current_user.name }}</div>
+      </div>
+      <div class="info-group">
+        <label>Email</label>
+        <div class="info-value">{{ current_user.email }}</div>
+      </div>
+      <div class="info-group">
+        <label>Member Since</label>
+        <div class="info-value">AutoPrice AI User</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.profile-container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.profile-card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 40px;
+}
+
+.profile-photo-section {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.photo-preview {
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+  border: 3px solid rgba(99,179,237,0.3);
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+}
+
+.photo-placeholder span {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.photo-placeholder p {
+  font-size: 0.85rem;
+}
+
+.photo-upload-area {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 12px 24px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.upload-hint {
+  width: 100%;
+  text-align: center;
+  color: #a0aec0;
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+.profile-info-section {
+  display: grid;
+  gap: 20px;
+}
+
+.info-group label {
+  display: block;
+  color: #a0aec0;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 1.1rem;
+  color: #fff;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.message {
+  margin-top: 15px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.message.success {
+  background: rgba(72,187,120,0.15);
+  border: 1px solid rgba(72,187,120,0.4);
+  color: #68d391;
+}
+
+.message.error {
+  background: rgba(245,101,101,0.15);
+  border: 1px solid rgba(245,101,101,0.4);
+  color: #fc8181;
+}
+
+.hidden {
+  display: none;
+}
+</style>
+
+<script>
+const photoInput = document.getElementById("photo-input");
+const uploadBtn = document.getElementById("upload-btn");
+const photoMessage = document.getElementById("photo-message");
+const photoPreview = document.getElementById("photo-preview");
+
+photoInput.addEventListener("change", function() {
+  if (this.files && this.files[0]) {
+    uploadBtn.disabled = false;
+    // Preview the selected image
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      photoPreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+    };
+    reader.readAsDataURL(this.files[0]);
+  }
+});
+
+document.getElementById("photo-upload-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("photo", photoInput.files[0]);
+
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = "⏳ Uploading...";
+
+  try {
+    const res = await fetch("/api/profile/photo", {
+      method: "POST",
+      body: formData
+    });
+    const data = await res.json();
+    
+    if (data.error) {
+      photoMessage.textContent = "⚠️ " + data.error;
+      photoMessage.className = "message error";
+    } else {
+      photoMessage.textContent = "✅ Photo uploaded successfully!";
+      photoMessage.className = "message success";
+      // Update the photo in navbar
+      updateNavbarPhoto(data.photo);
+    }
+  } catch {
+    photoMessage.textContent = "⚠️ Server error. Please try again.";
+    photoMessage.className = "message error";
+  }
+
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = "⬆️ Upload Photo";
+  photoMessage.classList.remove("hidden");
+  
+  setTimeout(() => {
+    photoMessage.classList.add("hidden");
+  }, 5000);
+});
+
+function updateNavbarPhoto(photoPath) {
+  const navUser = document.querySelector(".nav-user");
+  if (navUser) {
+    const img = document.createElement("img");
+    img.src = "/static/" + photoPath;
+    img.style.width = "32px";
+    img.style.height = "32px";
+    img.style.borderRadius = "50%";
+    img.style.objectFit = "cover";
+    img.style.marginRight = "8px";
+    
+    const existingImg = navUser.querySelector("img");
+    if (existingImg) {
+      existingImg.remove();
+    }
+    navUser.insertBefore(img, navUser.firstChild);
+  }
+}
+</script>
+{% endblock %}

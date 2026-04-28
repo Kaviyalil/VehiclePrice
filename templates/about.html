@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}About – AutoPrice AI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>ℹ️ About AutoPrice AI</h2>
+  <p>Vehicle Price Prediction using Multi-Model Learning</p>
+</div>
+
+<div class="about-grid">
+  <div class="about-card">
+    <div class="about-icon">🎯</div>
+    <h3>Objective</h3>
+    <p>Assist buyers and sellers in estimating accurate vehicle prices and making informed decisions in the automobile market using machine learning.</p>
+  </div>
+  <div class="about-card">
+    <div class="about-icon">🤖</div>
+    <h3>ML Models Used</h3>
+    <ul>
+      <li>Decision Tree Regression</li>
+      <li>Support Vector Regression (SVR)</li>
+      <li>Locally Weighted Regression (LWR)</li>
+      <li>K-Means Clustering (feature enhancement)</li>
+    </ul>
+  </div>
+  <div class="about-card">
+    <div class="about-icon">📊</div>
+    <h3>Evaluation Metrics</h3>
+    <ul>
+      <li>Mean Absolute Error (MAE)</li>
+      <li>Mean Squared Error (MSE)</li>
+      <li>Root Mean Squared Error (RMSE)</li>
+      <li>R² Score (primary metric)</li>
+    </ul>
+  </div>
+  <div class="about-card">
+    <div class="about-icon">⚙️</div>
+    <h3>Tech Stack</h3>
+    <ul>
+      <li>Python, Flask</li>
+      <li>Scikit-learn, NumPy, Pandas</li>
+      <li>HTML, CSS</li>
+      <li>Flask-Login for authentication</li>
+    </ul>
+  </div>
+</div>
+
+<div class="model-chart">
+  <h3>Model Performance Comparison</h3>
+  <img src="/static/model_comparison.png" alt="Model Comparison Chart"/>
+</div>
+{% endblock %}

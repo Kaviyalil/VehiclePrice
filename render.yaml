@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: autoprice-ai
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt && python generate_data.py && python model_training.py
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: FLASK_SECRET
+        sync: false

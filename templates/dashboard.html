@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – AutoPrice AI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Welcome back, {{ current_user.name }} 👋</h2>
+  <p>Here's your prediction summary</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">🔍</div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-label">Total Predictions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📊</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(avg) }}</div>
+    <div class="stat-label">Average Price</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📈</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(highest) }}</div>
+    <div class="stat-label">Highest Price</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📉</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(lowest) }}</div>
+    <div class="stat-label">Lowest Price</div>
+  </div>
+</div>
+
+<div class="dashboard-actions">
+  <a href="/predict" class="btn-primary">🔍 New Prediction</a>
+  <a href="/history" class="btn-secondary">📋 View History</a>
+</div>
+
+{% if recent %}
+<div class="section-title">Recent Predictions</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Make</th><th>Model</th><th>Year</th><th>Price</th><th>Algorithm</th></tr>
+    </thead>
+    <tbody>
+      {% for h in recent %}
+      <tr>
+        <td>{{ h.date }}</td>
+        <td>{{ h.make }}</td>
+        <td>{{ h.model }}</td>
+        <td>{{ h.year }}</td>
+        <td class="price-cell">₹{{ "{:,.0f}".format(h.price) }}</td>
+        <td><span class="badge">{{ h.algorithm }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">No predictions yet. <a href="/predict">Make your first prediction →</a></div>
+{% endif %}
+{% endblock %}
