@@ -68,8 +68,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/autoprice-ai:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/autoprice-ai:${{ github.sha }}
+            stuartittle/autoprice-ai:latest
+            stuartittle/autoprice-ai:${{ github.sha }}
           build-args: |
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
