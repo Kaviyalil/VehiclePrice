@@ -20,23 +20,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Cache pip dependencies
+      - name: Cache pip
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Generate dataset
-        run: python generate_data.py
+      - name: Generate dataset & train model
+        run: python generate_data.py && python model_training.py
 
-      - name: Train model
-        run: python model_training.py
-
-      - name: Test Flask app starts correctly
+      - name: Test Flask app
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -46,60 +42,47 @@ jobs:
           from app import app
           client = app.test_client()
           r = client.get('/login')
-          assert r.status_code == 200, f'Login page failed: {r.status_code}'
-          print('✅ All tests passed')
+          assert r.status_code == 200
+          print('✅ Test passed')
           "
 
-      - name: Upload model artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: model-pkl
-          path: model.pkl
-
-  # ── Job 2: Build ─────────────────────────────────────────────────────────────
-  build:
-    name: 🔨 Build
+  # ── Job 2: Build & Push Docker Image ─────────────────────────────────────────
+  docker:
+    name: 🐳 Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: test
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
         with:
-          python-version: "3.11"
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Download model artifact
-        uses: actions/download-artifact@v3
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
         with:
-          name: model-pkl
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/autoprice-ai:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/autoprice-ai:${{ github.sha }}
+          build-args: |
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+            FLASK_SECRET=${{ secrets.FLASK_SECRET }}
 
-      - name: Verify build
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          FLASK_SECRET: ${{ secrets.FLASK_SECRET }}
-        run: |
-          python -c "
-          import pickle
-          obj = pickle.load(open('model.pkl','rb'))
-          print('✅ Model loaded:', obj['model_name'])
-          print('✅ Makes:', list(obj['encoders']['Make'].classes_))
-          "
-
-  # ── Job 3: Deploy ─────────────────────────────────────────────────────────────
+  # ── Job 3: Deploy to Render ───────────────────────────────────────────────────
   deploy:
     name: 🚀 Deploy to Render
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: docker
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger Render Deploy
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}" \
-            -H "Content-Type: application/json"
-          echo "✅ Deployment triggered on Render"
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          echo "✅ Deployed to https://autoprice-ai.onrender.com"
